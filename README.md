@@ -174,10 +174,6 @@ That's it! Now use one of these commands in Claude Code:
 | `/planning-with-files:start` | Type `/planning` | Original start command |
 
 <details>
-<summary><strong>🇨🇳 Chinese / 中文版</strong></summary>
-
-完整的中文本地化版本。所有规划指令、模板和提示均为中文。
-
 ```bash
 npx skills add OthmanAdi/planning-with-files --skill planning-with-files-zh -g
 ```
