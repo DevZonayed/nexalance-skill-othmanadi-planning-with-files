@@ -1,3 +1,7 @@
+<div align="center">
+<img src="media/banner.png" alt="planning-with-files" width="100%">
+</div>
+
 # Planning with Files
 
 > **Work like Manus** — the AI agent company Meta acquired for **$2 billion**.
