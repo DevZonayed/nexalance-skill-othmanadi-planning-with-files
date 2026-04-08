@@ -26,8 +26,6 @@ metadata:
 
   version: "2.33.0"
 
-  version: "2.32.0"
-
 ---
 
 # 文件规划系统
