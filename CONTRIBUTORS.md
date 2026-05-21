@@ -218,6 +218,20 @@ These amazing people have contributed code, documentation, or significant improv
   - Changed shebangs from `/bin/bash` to `/usr/bin/env bash` across hook scripts
   - Fixes compatibility on systems like NixOS where bash is not at `/bin/bash`
 
+- **[@TomXPRIME](https://github.com/TomXPRIME)** - [PR #157](https://github.com/OthmanAdi/planning-with-files/pull/157)
+  - Brought the `.pi` adapter up to full hook parity with Claude Code by shipping a bundled TypeScript extension under `.pi/skills/planning-with-files/extensions/planning-with-files/`
+  - Mapped eight Pi lifecycle events to the same behavior the skill provides on Claude Code: `session_start` runs session catchup, `before_agent_start` injects plan context, `tool_call` adds pre-tool recitation, `tool_result` appends the post-write reminder, `agent_end` auto-continues incomplete plans with a per-session+plan limit of three, `session_before_compact` flushes the plan reminder with the active `Plan-SHA256`, `session_shutdown` clears loop timers and per-session state, `input` resets the auto-continue counter
+  - Added a four-mode system (`auto`, `parity`, `cache-safe`, `notify`) with DeepSeek auto-detection from `ctx.model.provider` and `ctx.model.id`, so cache-prefix-sensitive models keep their KV-cache stable
+  - Wired the existing v2.37 SHA-256 attestation gate into the Pi runtime so the same `.attestation` file locks the plan across both Claude Code and Pi
+  - Registered four slash commands (`/plan-status`, `/plan-attest`, `/plan-goal`, `/plan-loop`) mirroring their Claude Code counterparts
+  - Added 12 contract tests covering packaging, declared capabilities, and documentation strings; iterated through PRs #155 and #156 to land code-only and version-clean in #157
+  - **Impact:** Removes the long-standing "hooks are Claude Code only" gap in the `.pi` adapter and gives DeepSeek+Pi users a cache-safe reminder path that does not invalidate the KV-cache prefix on every turn
+
+- **[@DLI1996](https://github.com/DLI1996)** - [Issue #154](https://github.com/OthmanAdi/planning-with-files/issues/154)
+  - Caught that `docs/codex.md` instructed users to set `codex_hooks = true` in `~/.codex/config.toml`, while OpenAI's current Codex hooks docs (developers.openai.com/codex/hooks) now make `hooks` the canonical key and `codex_hooks` a deprecated alias
+  - Linked the upstream OpenAI page so the canonical key change was easy to verify
+  - **Impact:** v2.39.0 swaps the docs to `hooks = true` in four sites with an alias note, so new users get the canonical key while users on older configs are not pushed to migrate
+
 ## Community Forks
 
 These developers have created forks that extend the functionality:
@@ -270,4 +284,4 @@ If you've contributed and don't see your name here, please open an issue! We wan
 
 **Total Contributors:** 40+ and growing!
 
-*Last updated: May 1, 2026*
+*Last updated: May 21, 2026*

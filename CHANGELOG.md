@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.39.0] - 2026-05-21
+
+### Added
+
+- **Pi Coding Agent full hook parity extension** (PR #157 by @TomXPRIME): the `.pi/skills/planning-with-files/` adapter previously shipped only the markdown skill, with a docs note that hook-style automation was Claude Code specific and not available on Pi. v2.39.0 ships a bundled TypeScript extension under `.pi/skills/planning-with-files/extensions/planning-with-files/` that maps Pi lifecycle events onto the same behavior the skill provides on Claude Code. Event surface: `session_start` runs session catchup, `before_agent_start` injects plan context, `tool_call` adds pre-tool recitation, `tool_result` appends the post-write reminder to write/edit outputs, `agent_end` auto-continues incomplete plans (limit 3 per session+plan), `session_before_compact` flushes the plan reminder with the active `Plan-SHA256`, `session_shutdown` clears loop timers and per-session state, `input` resets the auto-continue counter on user activity. The extension declares itself via `pi.extensions` in `.pi/skills/planning-with-files/package.json` so `pi install npm:pi-planning-with-files` auto-loads it.
+- **Pi mode system** (PR #157): four modes select how the extension talks to the model. `auto` (default) reads the active model's provider plus id, picks `cache-safe` when DeepSeek is detected, picks `parity` otherwise. `parity` reproduces the full Claude-style dynamic injection (plan content varies per fire). `cache-safe` swaps the dynamic content for fixed reminder strings so the DeepSeek KV-cache prefix stays stable across turns. `notify` surfaces the reminder via `ctx.ui.notify` only, never adds tokens to the model input. Configurable via `PWF_MODE` env var, project `.pi/settings.json`, or global `~/.pi/agent/settings.json` under the `planningWithFiles.mode` key.
+- **Pi attestation gate** (PR #157): the Pi extension reads the same `.planning/<active-plan>/.attestation` file the canonical v2.37 `attest-plan.sh` writes. On every hook fire it recomputes the SHA-256 of `task_plan.md` and compares against the stored hash. On mismatch the extension blocks injection and emits the `[PLAN TAMPERED]` warning with the expected and actual hashes plus the path to re-approve. Source of truth is shared with Claude Code, so attesting once locks the plan across both runtimes.
+- **Pi slash commands** (PR #157): four commands registered through `pi.registerCommand` mirror their Claude Code counterparts. `/plan-status` prints active plan path, scope, phase totals. `/plan-attest [--show|--clear]` runs the canonical attest helper (`.ps1` on Windows, `.sh` on POSIX), surfacing the result through `ctx.ui.notify`. `/plan-goal <text|default|clear>` sets a termination criterion that the auto-continue path appends to its prompt; `default` resolves to the canonical "all phases complete" condition. `/plan-loop [interval] [prompt|stop]` sets up a `setInterval` tick that re-reads the plan and nudges progress, with `stop` and `session_shutdown` both clearing the timer.
+- **`.pi/skills/planning-with-files/package.json`**: declares the new `pi.extensions` array, adds `peerDependencies` for `@earendil-works/pi-coding-agent`, bumps the npm scheme to `1.1.0` to reflect the extension surface addition (npm scheme remains independent of the canonical 2.x version).
+- **`docs/cache-safe-diagram.md`**: ASCII diagram showing how cache-safe mode keeps the KV-cache prefix stable across turns for DeepSeek and other prefix-sensitive models.
+- **`tests/test_pi_extension_packaging.py`** (3 tests): asserts the `.pi` package.json declares `pi.extensions`, the extension entrypoint exists, and the extension directory carries all required source files.
+- **`tests/test_pi_extension_capabilities.py`** (5 tests): asserts the runtime registers the four documented commands, declares all eight expected event handlers, and exposes the documented mode enum.
+- **`tests/test_pi_docs_hook_support.py`** (4 tests): asserts the Pi docs no longer carry the "hooks are Claude Code specific" disclaimer, the SKILL.md surface lists the new commands, and the README documents the mode system.
+
+### Fixed
+
+- **Codex `[features]` flag name** (Issue #154 by @DLI1996): `docs/codex.md` instructed users to add `codex_hooks = true` under `[features]` in `~/.codex/config.toml`. OpenAI updated the canonical Codex hooks docs (developers.openai.com/codex/hooks) to make `hooks` the canonical key and `codex_hooks` a deprecated alias. v2.39.0 swaps the docs to `hooks = true` in four sites (introductory callout, the "Enable Hooks in config.toml" code block plus its follow-up prose, and the troubleshooting checklist), and adds a one-line note in each spot that `codex_hooks = true` still works as a deprecated alias so users on older configs are not pushed to migrate. Verification command updated to `rg '^(hooks|codex_hooks)\s'`.
+
+### Changed
+
+- Version bumped to 2.39.0 across 14 SKILL.md variants, `plugin.json`, `marketplace.json`, and `CITATION.cff` via `scripts/bump-version.py`. `.continue`, `.gemini`, `.pi`, `.kiro` lag intentionally; `.pi` carries its own npm scheme bump (1.0.1 to 1.1.0) inside `.pi/skills/planning-with-files/package.json` for the extension surface addition.
+
+### Verification scope
+
+- Python contract tests (110 pass, 2 pre-existing Windows exec-bit fails unrelated to this release) cover the Pi extension's packaging, declared event surface, declared command surface, and documentation. The TypeScript runtime itself runs only when loaded by a live Pi Coding Agent process. Behavior under Pi was validated by the PR author; no CI runtime test exists for the Pi extension code path. Pi-specific regressions should be filed as new issues against `.pi/skills/planning-with-files/extensions/`.
+
+### Thanks
+
+- @TomXPRIME for the Pi full hook parity extension (PR #157). Lifecycle event mappings, mode system, attestation gate, four slash commands, and 12 contract tests, iterated through PRs #155 and #156 to land code-only in #157.
+- @DLI1996 for catching the Codex `[features]` flag drift against OpenAI's canonical docs (Issue #154).
+
 ## [2.38.1] - 2026-05-16
 
 ### Fixed
